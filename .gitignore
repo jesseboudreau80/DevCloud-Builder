@@ -1,0 +1,29 @@
+# Ignore sensitive and system directories
+.env
+pg_data/
+portainer_data/
+n8n_data/
+syncthing_config/
+sync/
+workspace/
+
+# Ignore Docker volumes
+*.log
+*.pid
+*.sock
+
+# Node / Python / build caches
+node_modules/
+__pycache__/
+.DS_Store
+
+# VS Code Server local files
+.vscode/
+.history/
+.code-server/
+
+# ngrok and secrets
+*.ngrok
+*.token
+*.key
+*.pem

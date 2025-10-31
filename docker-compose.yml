@@ -1,0 +1,95 @@
+version: "3.9"
+
+services:
+  code:
+    image: codercom/code-server:latest
+    container_name: devcloud-code
+    environment:
+      - PASSWORD=${CODE_SERVER_PASSWORD}
+      - TZ=${TZ}
+    ports:
+      - "8443:8443"
+    volumes:
+      - ./workspace:/home/coder/project
+    restart: unless-stopped
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: devcloud-n8n
+    environment:
+      - GENERIC_TIMEZONE=${TZ}
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      - QUEUE_BULL_REDIS_HOST=redis
+      - N8N_PORT=5678
+    ports:
+      - "5678:5678"
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  syncthing:
+    image: lscr.io/linuxserver/syncthing:latest
+    container_name: devcloud-syncthing
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=${TZ}
+    ports:
+      - "8384:8384"
+      - "22000:22000/tcp"
+      - "22000:22000/udp"
+      - "21027:21027/udp"
+    volumes:
+      - ./syncthing_config:/config
+      - ./sync:/data1
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15
+    container_name: devcloud-postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./pg_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:alpine
+    container_name: devcloud-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: devcloud-portainer
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./portainer_data:/data
+    restart: unless-stopped
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: devcloud-watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --cleanup --interval 86400
+    restart: unless-stopped
+
+networks:
+  default:
+    name: core_default
